@@ -87,3 +87,34 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql+psycopg2://app:app@localhost:5432/stream_test
         run: uv run pytest -v
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build the image and start postgres and dashboard
+        run: docker compose up -d --build postgres dashboard
+
+      - name: Wait for the dashboard
+        run: |
+          for _ in $(seq 1 24); do
+            if curl -fsS http://localhost:8501/_stcore/health > /dev/null; then
+              echo "Dashboard is healthy"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Dashboard did not become healthy within 120 seconds"
+          docker compose logs
+          exit 1
+
+      - name: Seed the database through the replay pipeline
+        run: docker compose run --rm monitor python main.py replay data/sample-stream.jsonl
+
+      - name: Verify stored bars
+        run: docker compose run --rm monitor python main.py bars BTC-USD --limit 2 | grep "BTC-USD"
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
