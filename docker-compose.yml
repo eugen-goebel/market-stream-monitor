@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: stream
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d stream"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  monitor:
+    build: .
+    command: python main.py monitor BTC-USD ETH-USD --duration 86400
+    environment:
+      DATABASE_URL: postgresql+psycopg2://app:app@postgres:5432/stream
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  dashboard:
+    build: .
+    command: streamlit run app.py --server.address 0.0.0.0 --server.port 8501
+    environment:
+      DATABASE_URL: postgresql+psycopg2://app:app@postgres:5432/stream
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8501:8501"
+
+volumes:
+  pgdata:

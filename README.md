@@ -46,6 +46,10 @@ uv run streamlit run app.py
 
 The dashboard reads the same database the CLI writes to, so it works as a live monitoring console while a `monitor` process runs in another terminal. It shows a candlestick chart of the latest minute bars with the VWAP overlaid, a per-bar volume chart, metric cards for the selected product and a feed of the most recent alerts. A sidebar toggle drives the auto refresh: when it is on the page sleeps for the chosen interval (five seconds by default) and reruns, so new bars appear without a manual reload.
 
+## Docker
+
+`docker compose up` starts PostgreSQL, the live monitor and the dashboard on http://localhost:8501, with bars and alerts persisted in a named volume. For a fully offline run, seed the database through the same pipeline with `docker compose run --rm monitor python main.py replay data/sample-stream.jsonl`.
+
 ## How it works
 
 | Stage | What happens |
