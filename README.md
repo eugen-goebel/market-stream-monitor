@@ -20,9 +20,14 @@ uv sync
 # Watch the live stream for two minutes, store bars and alerts
 uv run main.py monitor BTC-USD ETH-USD --duration 120
 
+# Watch Binance instead, products use the exchange symbol format
+uv run main.py monitor BTCUSDT ETHUSDT --provider binance
+
 # Offline demo: replay the bundled recording of real feed messages
 uv run main.py replay data/sample-stream.jsonl
 ```
+
+A second provider, Binance, is supported through `--provider binance` on the `record` and `monitor` commands. A small provider abstraction holds the per-exchange details, the websocket URL, the optional subscribe payload and the message parser, so both feeds run through one ingestion, aggregation and alert pipeline.
 
 ```
 BTC-USD 2026-06-12 18:40  O 63851  H 63852  L 63843.5  C 63850  vol 0.2784  vwap 63846.44  trades 57
