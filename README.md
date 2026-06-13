@@ -56,7 +56,7 @@ The dashboard reads the same database the CLI writes to, so it works as a live m
 |-------|--------------|
 | Ingest | An async websocket client subscribes to the matches channel and yields one JSON message per executed trade, reconnecting with exponential backoff |
 | Aggregate | A tumbling-window aggregator folds trades into one-minute bars per product: open, high, low, close, volume, VWAP and trade count |
-| Alert | Completed bars run through two rules: volume above 3x the trailing 20-bar average, and a price move of more than 0.5% within one minute |
+| Alert | Completed bars run through four rules: volume above 3x the trailing 20-bar average, a price move of more than 0.5% within one minute, a close more than 1% from the volume weighted rolling VWAP of the trailing bars, and a trade count above 3x the trailing average |
 | Store | Bars persist idempotently on (product, minute), alerts append, SQLite by default and PostgreSQL via DATABASE_URL |
 
 The aggregation and alert math is tested against hand-computed values, and the websocket client is tested against a local fake feed server, so the full pipeline runs in CI without touching the network.
@@ -69,7 +69,7 @@ market-stream-monitor/
 ├── processing/    # Minute bar aggregation and alert rules
 ├── db/            # SQLAlchemy models and idempotent storage
 ├── data/          # A bundled recording of real feed messages
-├── tests/         # 40 tests, run on SQLite and PostgreSQL in CI
+├── tests/         # 48 tests, run on SQLite and PostgreSQL in CI
 ├── app.py         # Streamlit dashboard: candlesticks, VWAP, alerts
 └── main.py        # CLI: record, monitor, replay, bars, alerts
 ```
