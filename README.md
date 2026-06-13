@@ -38,6 +38,14 @@ Replayed 4 bars (4 new) with 0 alerts
 
 Record your own session with `uv run main.py record BTC-USD --duration 60 --output data/my-session.jsonl` and query stored data with `uv run main.py bars BTC-USD` and `uv run main.py alerts`.
 
+## Dashboard
+
+```bash
+uv run streamlit run app.py
+```
+
+The dashboard reads the same database the CLI writes to, so it works as a live monitoring console while a `monitor` process runs in another terminal. It shows a candlestick chart of the latest minute bars with the VWAP overlaid, a per-bar volume chart, metric cards for the selected product and a feed of the most recent alerts. A sidebar toggle drives the auto refresh: when it is on the page sleeps for the chosen interval (five seconds by default) and reruns, so new bars appear without a manual reload.
+
 ## How it works
 
 | Stage | What happens |
@@ -57,7 +65,8 @@ market-stream-monitor/
 ├── processing/    # Minute bar aggregation and alert rules
 ├── db/            # SQLAlchemy models and idempotent storage
 ├── data/          # A bundled recording of real feed messages
-├── tests/         # 30 tests, run on SQLite and PostgreSQL in CI
+├── tests/         # 40 tests, run on SQLite and PostgreSQL in CI
+├── app.py         # Streamlit dashboard: candlesticks, VWAP, alerts
 └── main.py        # CLI: record, monitor, replay, bars, alerts
 ```
 
