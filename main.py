@@ -3,6 +3,7 @@
 Examples:
     uv run main.py record BTC-USD --duration 30 --output data/sample-stream.jsonl
     uv run main.py monitor BTC-USD ETH-USD --duration 120
+    uv run main.py monitor BTCUSDT ETHUSDT --provider binance --duration 120
     uv run main.py replay data/sample-stream.jsonl
     uv run main.py bars BTC-USD --limit 10
     uv run main.py alerts --limit 10
@@ -29,13 +30,15 @@ def _print_bar(bar: "MinuteBar | StoredBar") -> None:
     )
 
 
-def cmd_record(products: list[str], duration: float, output: str) -> int:
-    from streaming.client import stream_messages
+def cmd_record(products: list[str], duration: float, output: str, provider: str) -> int:
+    from streaming.providers import PROVIDERS, stream_provider_messages
+
+    feed = PROVIDERS[provider]
 
     async def run() -> int:
         count = 0
         with open(output, "w", encoding="utf-8") as handle:
-            async for message in stream_messages(products, duration):
+            async for message in stream_provider_messages(feed, products, duration):
                 handle.write(json.dumps(message) + "\n")
                 count += 1
         return count
@@ -45,12 +48,12 @@ def cmd_record(products: list[str], duration: float, output: str) -> int:
     return 0
 
 
-def cmd_monitor(products: list[str], duration: float) -> int:
+def cmd_monitor(products: list[str], duration: float, provider: str) -> int:
     from processing.alerts import AlertEngine
     from processing.bars import BarAggregator
-    from streaming.client import stream_messages
-    from streaming.messages import parse_coinbase_message
+    from streaming.providers import PROVIDERS, stream_provider_messages
 
+    feed = PROVIDERS[provider]
     init_db()
     db = SessionLocal()
     aggregator = BarAggregator()
@@ -61,8 +64,8 @@ def cmd_monitor(products: list[str], duration: float) -> int:
 
         bar_count = 0
         alert_count = 0
-        async for message in stream_messages(products, duration):
-            trade = parse_coinbase_message(message)
+        async for message in stream_provider_messages(feed, products, duration):
+            trade = feed.parse(message)
             if trade is None:
                 continue
             for bar in aggregator.add(trade):
@@ -160,10 +163,12 @@ def main() -> int:
     p_record.add_argument("products", nargs="+", help="Products, e.g. BTC-USD ETH-USD")
     p_record.add_argument("--duration", type=float, default=30.0)
     p_record.add_argument("--output", default="data/recording.jsonl")
+    p_record.add_argument("--provider", choices=("coinbase", "binance"), default="coinbase")
 
     p_monitor = sub.add_parser("monitor", help="Watch the live stream, store bars and alerts")
     p_monitor.add_argument("products", nargs="+", help="Products, e.g. BTC-USD ETH-USD")
     p_monitor.add_argument("--duration", type=float, default=120.0)
+    p_monitor.add_argument("--provider", choices=("coinbase", "binance"), default="coinbase")
 
     p_replay = sub.add_parser("replay", help="Run the pipeline over a recorded JSONL file")
     p_replay.add_argument("path")
@@ -177,9 +182,9 @@ def main() -> int:
 
     args = parser.parse_args()
     if args.command == "record":
-        return cmd_record(args.products, args.duration, args.output)
+        return cmd_record(args.products, args.duration, args.output, args.provider)
     if args.command == "monitor":
-        return cmd_monitor(args.products, args.duration)
+        return cmd_monitor(args.products, args.duration, args.provider)
     if args.command == "replay":
         return cmd_replay(args.path)
     if args.command == "bars":
