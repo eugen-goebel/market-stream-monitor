@@ -9,7 +9,7 @@ dependencies = [
     "psycopg2-binary>=2.9.0",
     "pydantic>=2.13.0",
     "sqlalchemy>=2.0.51",
-    "streamlit>=1.58.0",
+    "streamlit>=1.59.1",
     "websockets>=16.1",
 ]
 
