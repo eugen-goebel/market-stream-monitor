@@ -5,7 +5,7 @@ description = "Real-time market data monitor with live websocket ingestion, stre
 requires-python = ">=3.12"
 dependencies = [
     "certifi>=2026.6.17",
-    "plotly>=6.8.0",
+    "plotly>=6.9.0",
     "psycopg2-binary>=2.9.0",
     "pydantic>=2.13.0",
     "sqlalchemy>=2.0.51",
