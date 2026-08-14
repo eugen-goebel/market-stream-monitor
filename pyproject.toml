@@ -8,7 +8,7 @@ dependencies = [
     "plotly>=6.9.0",
     "psycopg2-binary>=2.9.0",
     "pydantic>=2.13.0",
-    "sqlalchemy>=2.0.51",
+    "sqlalchemy>=2.0.52",
     "streamlit>=1.61.1",
     "websockets>=16.1",
 ]
