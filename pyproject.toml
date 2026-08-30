@@ -10,7 +10,7 @@ dependencies = [
     "pydantic>=2.13.0",
     "sqlalchemy>=2.0.52",
     "streamlit>=1.61.1",
-    "websockets>=16.1",
+    "websockets>=16.1,<17",
 ]
 
 [dependency-groups]
