@@ -15,6 +15,7 @@ import streamlit as st
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+import db.database as database
 from db.database import SessionLocal, init_db
 from db.models import StoredAlert, StoredBar
 
@@ -23,6 +24,59 @@ st.title("Market Stream Monitor")
 
 init_db()
 db: Session = SessionLocal()
+
+SAMPLE_RECORDING = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "data", "sample-stream.jsonl"
+)
+
+
+def _sample_marker_path() -> str:
+    """Marker file recording that the current database holds seeded sample data.
+
+    It lives beside the database file rather than in session_state so the
+    notice survives the auto-refresh reruns and new browser sessions.
+
+    The path is read off the live engine rather than DATABASE_URL, because
+    tests rebind db.database.engine to a temporary file without touching the
+    environment variable, and a marker written next to the wrong database
+    would leak between runs.
+    """
+    url = database.engine.url
+    if url.database and url.get_backend_name() == "sqlite":
+        return f"{url.database}.sample"
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), ".sample-data")
+
+
+@st.cache_resource(show_spinner="Replaying the bundled sample recording...")
+def _seed_sample_data() -> int:
+    """Replay the bundled recording once so a first visit shows something.
+
+    The dashboard used to open on nothing but an instruction to go run a
+    CLI command, which is a dead end for anyone who just wants to look at
+    it. The recording ships in the repo, so replay it through the real
+    pipeline instead of asking.
+
+    st.cache_resource runs this once per process and makes concurrent
+    sessions wait for the first run, so two visitors cannot race on the
+    same SQLite file.
+    """
+    from db.store import store_alerts, store_minute_bars
+    from processing.alerts import AlertEngine
+    from processing.bars import aggregate_minute_bars
+    from streaming.replay import iter_trades
+
+    session = SessionLocal()
+    try:
+        bars = aggregate_minute_bars(iter_trades(SAMPLE_RECORDING))
+        engine = AlertEngine()
+        alerts = [alert for bar in bars for alert in engine.on_bar(bar)]
+        store_minute_bars(session, bars)
+        store_alerts(session, alerts)
+        with open(_sample_marker_path(), "w") as marker:
+            marker.write(f"{len(bars)}\n")
+        return len(bars)
+    finally:
+        session.close()
 
 
 def list_products() -> list[str]:
@@ -117,6 +171,10 @@ refresh_interval = st.sidebar.number_input(
 )
 
 products = list_products()
+if not products and os.path.exists(SAMPLE_RECORDING):
+    _seed_sample_data()
+    products = list_products()
+
 if not products:
     st.info(
         "No data is stored yet. Watch the live feed with "
@@ -124,6 +182,15 @@ if not products:
         "`python main.py replay data/sample-stream.jsonl`, then come back."
     )
     st.stop()
+
+# Say plainly when the numbers are the bundled recording rather than a live
+# feed. The marker file sits next to the database, so the notice survives
+# reruns and new sessions, and disappears once real data is streamed in.
+if os.path.exists(_sample_marker_path()):
+    st.caption(
+        "Showing the bundled sample recording, loaded because the database was "
+        "empty. Stream live data with `uv run main.py monitor BTC-USD ETH-USD`."
+    )
 
 controls = st.columns([2, 3])
 product = controls[0].selectbox("Product", products)
