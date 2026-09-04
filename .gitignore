@@ -7,6 +7,9 @@ __pycache__/
 venv/
 .env
 *.db
+# Marker written next to the database when the dashboard seeds the bundled
+# sample recording, so it can label the data as sample rather than live.
+*.db.sample
 
 # Coverage
 .coverage
