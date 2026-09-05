@@ -69,7 +69,7 @@ market-stream-monitor/
 ├── processing/    # Minute bar aggregation and alert rules
 ├── db/            # SQLAlchemy models and idempotent storage
 ├── data/          # A bundled recording of real feed messages
-├── tests/         # 48 tests, run on SQLite and PostgreSQL in CI
+├── tests/         # 49 tests, run on SQLite and PostgreSQL in CI
 ├── app.py         # Streamlit dashboard: candlesticks, VWAP, alerts
 └── main.py        # CLI: record, monitor, replay, bars, alerts
 ```
