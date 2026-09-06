@@ -44,6 +44,8 @@ Record your own session with `uv run main.py record BTC-USD --duration 60 --outp
 uv run streamlit run app.py
 ```
 
+![Dashboard](assets/dashboard.png)
+
 The dashboard reads the same database the CLI writes to, so it works as a live monitoring console while a `monitor` process runs in another terminal. It shows a candlestick chart of the latest minute bars with the VWAP overlaid, a per-bar volume chart, metric cards for the selected product and a feed of the most recent alerts. A sidebar toggle drives the auto refresh: when it is on the page sleeps for the chosen interval (five seconds by default) and reruns, so new bars appear without a manual reload.
 
 ## Docker
